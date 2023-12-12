@@ -2,6 +2,9 @@
 import axios from 'axios'; 
 import HoneypotCheckerCaller from '../api/HoneypotCheckerCaller.js';
 import Web3 from 'web3';
+import { GoPlusLabs } from '@normalizex/gopluslabs-api';
+const goPlus = new GoPlusLabs();
+
 import {
     RPC_BSC,
     PANCAKE_SWAP_ROUTER_ADDRESS,
@@ -98,6 +101,17 @@ const checkforHoneyPot =(abi)=>{
       const h1 = dexscreener.data.pairs[0].priceChange.h1;
       const fdv = dexscreener?.data?.pairs[0]?.fdv;
       
+      tokenInfo={ 
+      name:name,
+      symbol:symbol,
+      network:String(chainId).toUpperCase(),
+      dexId:String(dexId).toUpperCase(),
+      h1:h1, 
+      liquidity:liquidity, 
+      priceUsd:Number(priceUsd).toFixed(8)+' (in usd )', 
+      pairCreatedAt:new Date(pairCreatedAt).toLocaleDateString(),
+     
+    }
       if (chainId === 'bsc') {
 
 
@@ -293,9 +307,58 @@ const checkforHoneyPot =(abi)=>{
               blacklisted:!honeyPotCheck
             }
 
-
+            console.log(tokenInfo);
           })
           .catch((err) => null); 
+
+
+      } else if (chainId =='avalanche') {
+
+        const chain = 43114;//Binance Smart Chain
+        const ITM =tokenAddress;//SCAM TOKEN!
+        const apiKey='U5FAN98S5XNH5VI83TI4H35R9I4TDCKEJY';
+
+        const go = goPlus.tokenSecurity(chain, ITM).then((token) => { 
+          console.log(token);
+          }).catch((err) => null);
+          let verified=false;
+          let honeyPotCheck=false;
+          const {
+            buyGas,
+            sellGas,
+            buyTax,
+            sellTax
+          } = go;
+          const verificationdata = await axios
+          .get(`https://api.snowtrace.io/api?module=contract&action=getabi&address=${tokenAddress}&apikey=${apiKey}`)
+          .then(esp =>esp.data)
+          .catch((err) => null);
+
+
+          console.log(verificationdata);
+
+          if(verificationdata.status == '0'){ verified=false; honeyPotCheck=true;}
+
+      tokenInfo={
+                status:1,
+              name:name,
+              symbol:symbol,
+              network:String(chainId).toUpperCase(),
+              dexId:String(dexId).toUpperCase(),
+              h1:h1,
+              buygas:buyGas,
+              sellgas:sellGas,
+              buyTax:buyTax,
+              sellTax:sellTax,
+              liquidity:liquidity, 
+              priceUsd:Number(priceUsd).toFixed(8)+' (in usd )', 
+              pairCreatedAt:new Date(pairCreatedAt).toLocaleDateString(),
+              isHoneyPot:honeyPotCheck, 
+              verified:verified,
+              blacklisted:!honeyPotCheck
+            }
+
+
       }
     }
 
